@@ -1,19 +1,25 @@
 import OpenAI from "openai";
 import dotenv from "dotenv";
-import { encoding_for_model } from "tiktoken";
 dotenv.config();
 
 const client = new OpenAI({
   apiKey: process.env.OpenAI_Key,
 });
 
+const context = [
+  { role: "system",
+    content: "keep answers short and concise ",
+  },
+]
+
 
 async function aiAnswer(question) {
+  context.push({ role: "user", content: question });
   const response = await client.responses.create({
     model: "gpt-4o-mini",
-    input: question,
+    input: context,
   });
-
+  context.push({ role: "assistant", content: response.output_text });
   console.log(response.output_text)
 }
 process.stdout.write("Ask me anything: ");
