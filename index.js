@@ -1,8 +1,7 @@
 import OpenAI from "openai";
 import dotenv from "dotenv";
-import { writeFileSync, createReadStream } from "fs";
 import express from "express";
-import multer from "multer";
+import { writefileSync } from "fs";
 
 const app = express();
 
@@ -13,43 +12,17 @@ const client = new OpenAI({
 });
 
 
-const storage = multer.diskStorage({
-  diskStorage: "uploads/",
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `audiofile-${Date.now()}${ext}`);
-  },
-});
-
-const upload = multer({ storage: storage });
-
-app.get("/", (req, res) => {
-  res.send(`<form action="/upload" method="post" enctype="multipart/form-data">
-    <input type="file" name="audiofile" accept="audio/*" />
-    <button type="submit">Upload Audio</button>
-  </form>`);
-});
+async function main() {
+  const response  = await client.audio.speech.create({
+    model: "whisper-1",
+    input: "helo how are you",
+    voice: "alloy",
+  })
+  const baseRes = Buffer.from( await response.arrayBuffer());
+  console.log(response);
+  writefileSync("output.mp3", Buffer.from(baseRes));
+  
+}
 
 
-app.post("/upload", upload.single("audio"),async (req, res) => {
-  try {
-    const filePath = req.file.path;
-    const response = await client.audio.transcriptions.create({
-      file: createReadStream(filePath),
-      model: "whisper-1",
-      response_format: "text",
-    });
-    writeFileSync("transcription.txt", response,"utf-8");
-    res.send(`Transcription completed. ${response.text}`);
-  } catch (error) {
-    console.error("Error during transcription:", error);
-    res.status(500).send("An error occurred during transcription.");
-  }
-});
-
-      
-
-
-app.listen(3200, () => {
-  console.log("Server is running on http://localhost:3200");
-});
+main();
