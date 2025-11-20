@@ -1,33 +1,27 @@
 import OpenAI from "openai";
 import dotenv from "dotenv";
+import { writeFileSync } from "fs";
+
 dotenv.config();
 
 const client = new OpenAI({
   apiKey: process.env.OpenAI_Key,
 });
 
-const context = [
-  { role: "system",
-    content: "keep answers short and concise ",
-  },
-]
-
-
-async function aiAnswer(question) {
-  context.push({ role: "user", content: question });
-  const response = await client.responses.create({
-    model: "gpt-4o-mini",
-    input: context,
+async function main() {
+  const response = await client.images.generate({
+    model: "dall-e-3",
+    prompt: "A futuristic cityscape at sunset, with flying cars and towering skyscrapers, in the style of cyberpunk art",
+    size: "1024x1024",
+    response_format: "b64_json",
+    n: 1,
   });
-  context.push({ role: "assistant", content: response.output_text });
-  console.log(response.output_text)
-}
-process.stdout.write("Ask me anything: ");
-process.stdin.on("data", (data) => {
-  const question = data.toString().trim();
-  if(question.toLowerCase() === "exit") {
-    process.exit();
-  }
-  aiAnswer(question);
-});
+  console.log(response.data);
 
+  const imageData = response.data[0].b64_json;
+  const path = "./futuristic_cityscape.png";
+  writeFileSync(path, Buffer.from(imageData, "base64"));
+  console.log(`Image saved to ${path}`);
+}
+
+main();
