@@ -1,29 +1,32 @@
 import {GoogleGenAI} from '@google/genai'
 import express from 'express'
 import dotenv from 'dotenv'
+import { readFileSync } from 'fs'
 dotenv.config()
 const googleGenAI = new GoogleGenAI({
   apiKey: process.env.Gemini_Key || '',
 })
-const app = express()
 
 
-app.get('/', async(req, res) => {
-  const response  = await googleGenAI.models.generateContentStream({
+async function main() {
+
+  const base64 = readFileSync('test.png', { encoding: 'base64' }) 
+  const response = await googleGenAI.models.generateContent({
     model: 'gemini-2.5-flash',
-    contents: "Tell me about ai in details",
-  })
-
-  for await (const chunk of response) {
-    const text = chunk.text
-    if (text) res.write(text)
-    // console.log(text);
+    contents: [
+      {
+        inlineData:{
+          mimeType: 'image/png',
+          data: base64,
+        } 
+      },
+      {
+        text: 'read text from image',  
+      },
+    ]
   }
-  res.send("Check your console")
-  // console.log(response.candidates[0].content);
-})
+  )
+  console.log('Response:', response.text)
+}
 
-
-app.listen(3000, () => {
-  console.log('Server is running on port 3000');
-});
+main()
