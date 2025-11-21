@@ -1,38 +1,25 @@
-import OpenAI from "openai";
-import dotenv from "dotenv";
-import express from "express";
-import { writefileSync } from "fs";
+import {GoogleGenAI} from '@google/genai'
+import dotenv from 'dotenv'
+dotenv.config()
+const googleGenAI = new GoogleGenAI({
+  apiKey: process.env.Gemini_Key || '',
+})
 
-const app = express();
 
-app.use(express.urlencoded({ extended: true }));
-
-dotenv.config();
-
-const client = new OpenAI({
-  apiKey: process.env.OpenAI_Key,
-});
-
-app.get("/", (req, res) => {
-  res.send(`<Form method="POST" action="/audio">
-    <input name="text" />
-    <button type="submit">Submit</button>
-  </Form>`);
-});
-
-app.post("/audio", async (req, res) => {
-  res.send(req?.body?.text);
-  const response  = await client.audio.speech.create({
-    model: "whisper-1",
-    input: req?.body?.text,
-    voice: "alloy",
+async function main() {
+  const response  = await googleGenAI.models.generateContent({
+    model: 'gemini-2.5-flash',
+    contents: "Tell me about india",
+    config: {
+      systemInstruction: "tell me in 50 words",
+      // maxOutputTokens: 1024,
+      temperature: 2.0,
+      thinkingConfig: {
+        // enabled: true,
+        includeThoughts: true,
+      },
+    },
   })
-  const baseRes = await response.arrayBuffer();
-  console.log(response);
-  writefileSync("output.mp3", Buffer.from(baseRes));
-});
-
-
-app.listen(3200, () => {
-  console.log("Server is running on port 3200");
-});
+  console.log(response.candidates[0].content);
+}
+main()
