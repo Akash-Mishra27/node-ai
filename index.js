@@ -73,4 +73,23 @@ function main(image) {
   console.log(response);
   
 }
+
+async function mainVideo(prompt) {
+  let operatrion  = googleGenAI.models.generateVideos({
+    model: 'veo-3.0-generate-001',
+    prompt: prompt,
+    config: {
+      // imageCount: 1,
+      // imageSize: '1024x1024',
+    }
+  })
+  while(!operatrion.done){
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    operatrion = googleGenAI.operations.getVideosOperation(operatrion)
+  }
+  googleGenAI.downloadVideo((await operatrion).response.generatedVideos[0], 'generated_video.mp4')
+
+  return operatrion.response;
+  
+}
 // main()
