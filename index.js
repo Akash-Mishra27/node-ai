@@ -1,7 +1,7 @@
 import {GoogleGenAI} from '@google/genai'
 import express from 'express'
 import dotenv from 'dotenv'
-import { readFileSync } from 'fs'
+import { readFileSync, write, writeFileSync } from 'fs'
 import multer from 'multer'
 dotenv.config()
 const googleGenAI = new GoogleGenAI({
@@ -48,4 +48,22 @@ app.listen(3000, () => {
   console.log('Server started on http://localhost:3000')
 })
 
-// main()
+
+
+function main() {
+  const response  = googleGenAI.models.generateImages({
+    model: 'gemini-3-pro-image-preview',
+    prompt: 'A futuristic cityscape at sunset, with flying cars and towering skyscrapers, digital art',
+    config: {
+      // imageCount: 1,
+      // imageSize: '1024x1024',
+    }
+  })
+
+  const image = response.generatedImages[0].image.imageBytes
+  const buffer = Buffer.from(image, 'base64')
+  writeFileSync('generated_image.png', buffer)
+  console.log(response);
+  
+}
+main()
