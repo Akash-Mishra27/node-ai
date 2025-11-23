@@ -14,10 +14,17 @@ const upload = multer({dest: 'uploads'})
 
 app.get('/', (req, res) => {
   res.send(`
-    <form action="/upload" method="post" enctype="multipart/form-data">
-      <input type="file" name="image" />
-      <button type="submit">Upload Image</button>
+    <form action="/generate" method="post" enctype="multipart/form-data">
+      <input type="text" name="imageText" />
+      <button type="submit">Genrate Image</button>
       `)
+}
+)
+
+app.post('/generate', express.urlencoded({ extended: true }), async (req, res) => {
+  const imageText = req.body.imageText
+  const response  = await main(imageText)
+  res.send(`Image generated and saved as generated_image.png`)
 }
 )
 
@@ -50,10 +57,10 @@ app.listen(3000, () => {
 
 
 
-function main() {
+function main(image) {
   const response  = googleGenAI.models.generateImages({
     model: 'gemini-3-pro-image-preview',
-    prompt: 'A futuristic cityscape at sunset, with flying cars and towering skyscrapers, digital art',
+    prompt: image,
     config: {
       // imageCount: 1,
       // imageSize: '1024x1024',
@@ -66,4 +73,4 @@ function main() {
   console.log(response);
   
 }
-main()
+// main()
