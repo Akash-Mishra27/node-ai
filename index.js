@@ -2,15 +2,31 @@ import {GoogleGenAI} from '@google/genai'
 import express from 'express'
 import dotenv from 'dotenv'
 import { readFileSync } from 'fs'
+import multer from 'multer'
 dotenv.config()
 const googleGenAI = new GoogleGenAI({
   apiKey: process.env.Gemini_Key || '',
 })
 
+const app = express()
+const upload = multer({dest: 'uploads'})
 
-async function main() {
 
-  const base64 = readFileSync('test.png', { encoding: 'base64' }) 
+app.get('/', (req, res) => {
+  res.send(`
+    <form action="/upload" method="post" enctype="multipart/form-data">
+      <input type="file" name="image" />
+      <button type="submit">Upload Image</button>
+      `)
+}
+)
+
+app.post('/upload', upload.single('image'), async (req, res) => {
+  const filePath = req.file.path
+  if (!filePath) {
+    return res.status(400).send('No file uploaded.')
+  }
+  const base64 = readFileSync(filePath, { encoding: 'base64' })
   const response = await googleGenAI.models.generateContent({
     model: 'gemini-2.5-flash',
     contents: [
@@ -26,7 +42,10 @@ async function main() {
     ]
   }
   )
-  console.log('Response:', response.text)
-}
+  res.send(`Response: ${response.text}`)
+})
+app.listen(3000, () => {
+  console.log('Server started on http://localhost:3000')
+})
 
-main()
+// main()
