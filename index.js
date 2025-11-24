@@ -8,88 +8,20 @@ const googleGenAI = new GoogleGenAI({
   apiKey: process.env.Gemini_Key || '',
 })
 
-const app = express()
-const upload = multer({dest: 'uploads'})
+const data = ["dog","cat","bird"]
 
-
-app.get('/', (req, res) => {
-  res.send(`
-    <form action="/generate" method="post" enctype="multipart/form-data">
-      <input type="text" name="imageText" />
-      <button type="submit">Genrate Image</button>
-      `)
-}
-)
-
-app.post('/generate', express.urlencoded({ extended: true }), async (req, res) => {
-  const imageText = req.body.imageText
-  const response  = await main(imageText)
-  res.send(`Image generated and saved as generated_image.png`)
-}
-)
-
-app.post('/upload', upload.single('image'), async (req, res) => {
-  const filePath = req.file.path
-  if (!filePath) {
-    return res.status(400).send('No file uploaded.')
-  }
-  const base64 = readFileSync(filePath, { encoding: 'base64' })
-  const response = await googleGenAI.models.generateContent({
-    model: 'gemini-2.5-flash',
-    contents: [
-      {
-        inlineData:{
-          mimeType: 'image/png',
-          data: base64,
-        } 
-      },
-      {
-        text: 'read text from image',  
-      },
-    ]
-  }
-  )
-  res.send(`Response: ${response.text}`)
-})
-app.listen(3000, () => {
-  console.log('Server started on http://localhost:3000')
-})
-
-
-
-function main(image) {
-  const response  = googleGenAI.models.generateImages({
-    model: 'gemini-3-pro-image-preview',
-    prompt: image,
-    config: {
-      // imageCount: 1,
-      // imageSize: '1024x1024',
+async function main() {
+  const response =await googleGenAI.models.embedContent({
+    model: 'gemini-embedding-001',
+    contents: data,
+  }) 
+  console.log(response.embeddings);
+  const manageEmbeedings= response.embeddings.map((embedding, index) => {
+    const itemKey = data[index];
+    return {
+      [itemKey] : embedding.values
     }
   })
-
-  const image = response.generatedImages[0].image.imageBytes
-  const buffer = Buffer.from(image, 'base64')
-  writeFileSync('generated_image.png', buffer)
-  console.log(response);
-  
+  writeFileSync('output.json',JSON.stringify(manageEmbeedings))
 }
-
-async function mainVideo(prompt) {
-  let operatrion  = googleGenAI.models.generateVideos({
-    model: 'veo-3.0-generate-001',
-    prompt: prompt,
-    config: {
-      // imageCount: 1,
-      // imageSize: '1024x1024',
-    }
-  })
-  while(!operatrion.done){
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    operatrion = googleGenAI.operations.getVideosOperation(operatrion)
-  }
-  googleGenAI.downloadVideo((await operatrion).response.generatedVideos[0], 'generated_video.mp4')
-
-  return operatrion.response;
-  
-}
-// main()
+main()
